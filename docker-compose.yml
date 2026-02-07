@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-harvester}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-harvester_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-harvester_db}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-harvester} -d ${POSTGRES_DB:-harvester_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-harvester}:${POSTGRES_PASSWORD:-harvester_secret}@db:5432/${POSTGRES_DB:-harvester_db}
+      OPENALEX_BASE_URL: https://api.openalex.org
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key}
+      DEBUG: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
