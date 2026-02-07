@@ -2,6 +2,8 @@
 
 Командный проект Advanced Backend & DevOps. Микросервис сбора и анализа метаданных научных публикаций (OpenAlex).
 
+Репозиторий: [Event-Discovery-Service-Backend-Develop/skyscraper](https://github.com/Event-Discovery-Service-Backend-Develop/skyscraper)
+
 ## Стек
 
 Django 5, DRF, JWT (Simple JWT), PostgreSQL, Docker.
