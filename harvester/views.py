@@ -1,5 +1,5 @@
 from rest_framework import viewsets
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from .models import Work
 from .serializers import WorkSerializer
@@ -7,7 +7,7 @@ from .serializers import WorkSerializer
 
 class WorkViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = WorkSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         qs = Work.objects.all()
