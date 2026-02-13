@@ -36,3 +36,44 @@ docker compose exec app python manage.py process_works
 - POST /api/token/refresh/ — обновить токен (body: refresh)
 - GET /api/works/ — список работ (нужен заголовок Authorization: Bearer <access>), фильтры: ?year=2024&search=... 
 - GET /admin/ — админка
+
+## Authentication
+
+The `/api/works/` endpoint is protected with JWT authentication.
+
+### Get access token
+
+POST `/api/token/`
+
+Body:
+{ 
+  "username": "your_username",
+  "password": "your_password"
+}
+
+Response:
+{
+  "refresh": "<refresh_token>",
+  "access": "<access_token>"
+}
+
+
+### Use token
+
+Send header:
+
+Authorization: Bearer <access_token>
+
+---
+
+## Pagination
+
+The `/api/works/` endpoint supports pagination.
+
+Query params:
+- page
+- page_size
+
+Example:
+
+GET /api/works/?page=1&page_size=5
