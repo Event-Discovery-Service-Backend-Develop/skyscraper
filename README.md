@@ -77,3 +77,9 @@ Query params:
 Example:
 
 GET /api/works/?page=1&page_size=5
+
+?search=ai
+
+?publication_year=2024
+
+?ordering=-publication_year
