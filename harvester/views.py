@@ -11,6 +11,10 @@ class WorkViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = WorkSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
+    filterset_fields = ["publication_year"]
+    search_fields = ["title", "keywords"]
+    ordering_fields = ["publication_year", "title", "created_at", "id"]
+    ordering = ["-publication_year", "-id"]
 
     def get_queryset(self):
         qs = Work.objects.all().order_by("-publication_year", "-id")
