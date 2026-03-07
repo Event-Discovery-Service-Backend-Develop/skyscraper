@@ -28,6 +28,17 @@ env/
 *~
 .env
 .env.local
+db.sqlite3
+*.db
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+dist/
+*.log
+load-tests/stress_test_results.json
+load-tests/soak_results.json
+load-tests/*_report.json
 *.env
 .coverage
 htmlcov/

@@ -1,0 +1,67 @@
+name: Django Tests & Coverage
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: harvester
+          POSTGRES_PASSWORD: harvester_secret
+          POSTGRES_DB: harvester_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run linting with flake8
+      run: |
+        pip install flake8
+        flake8 harvester config --max-line-length=120 --ignore=E501,W503,F401 || true
+      continue-on-error: true
+    
+    - name: Run tests with coverage
+      env:
+        DATABASE_URL: postgresql://harvester:harvester_secret@localhost:5432/harvester_db
+        USE_POSTGRES: '1'
+        DEBUG: 'False'
+        SECRET_KEY: test-secret-key-for-ci
+      run: |
+        pytest --cov=harvester --cov-report=xml --cov-report=term-missing
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false
+    
+    - name: Build Docker image
+      run: docker build -t harvester:latest .
+    
+    - name: Test Docker container
+      run: |
+        docker run --rm harvester:latest python manage.py help
