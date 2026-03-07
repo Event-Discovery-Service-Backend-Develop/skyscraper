@@ -177,6 +177,7 @@ class TestAuthentication:
         assert 'access' in response.data
         assert 'refresh' in response.data
     
+    @pytest.mark.django_db
     def test_token_obtain_invalid_credentials(self, api_client):
         """Неверные учетные данные"""
         response = api_client.post('/api/token/', {
@@ -220,7 +221,8 @@ class TestHealthcheck:
         """Healthcheck эндпоинт работает"""
         response = api_client.get('/health/')
         assert response.status_code == status.HTTP_200_OK
-        assert response.data['status'] == 'healthy'
+        data = response.json()
+        assert data['status'] == 'healthy'
     
     def test_root_endpoint(self, api_client):
         """Главная страница доступна"""
