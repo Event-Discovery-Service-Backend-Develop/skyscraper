@@ -1,8 +1,8 @@
 from rest_framework import serializers
-from .models import Work
+from .models import Conference
 
 
-class WorkSerializer(serializers.ModelSerializer):
+class ConferenceSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Work
-        fields = ["id", "openalex_id", "title", "doi", "publication_year", "keywords", "created_at"]
+        model = Conference
+        fields = ["id", "wikicfp_id", "title", "event_date", "location", "deadline", "url", "keywords", "created_at"]

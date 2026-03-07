@@ -11,7 +11,7 @@ if not settings.configured:
 import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
-from harvester.models import Work
+from harvester.models import Conference
 
 User = get_user_model()
 
@@ -43,45 +43,37 @@ def user(db):
 
 
 @pytest.fixture
-def sample_work(db):
-    """Тестовая научная работа из OpenAlex"""
-    import json
+def sample_conference(db):
+    """Тестовая конференция из WikiCFP"""
+    from datetime import date
     
-    raw = {
-        'id': 'https://openalex.org/W123456',
-        'title': 'Test Work on Machine Learning',
-        'doi': 'https://doi.org/10.1234/test',
-        'publication_year': 2024,
-        'keywords': ['machine learning', 'neural networks']
-    }
+    html = '<html><head><title>Test Conference</title></head><body><h1>Test Conference</h1><p>About AI</p></body></html>'
     
-    return Work.objects.create(
-        openalex_id='W123456',
-        title='Test Work on Machine Learning',
-        doi='10.1234/test',
-        publication_year=2024,
-        raw_json=json.dumps(raw),
-        keywords='machine learning, neural networks'
+    return Conference.objects.create(
+        wikicfp_id='12345',
+        title='Test Conference',
+        event_date=date(2024, 5, 15),
+        location='New York',
+        deadline=date(2024, 4, 1),
+        url='https://www.wikicfp.com/cfp/program.id/12345',
+        raw_html=html,
+        keywords='artificial intelligence, machine learning'
     )
 
 
 @pytest.fixture
-def multiple_works(db):
-    """Создаёт несколько работ для тестирования фильтрации"""
-    import json
+def multiple_conferences(db):
+    """Создаёт несколько конференций для тестирования фильтрации"""
+    from datetime import date
     
-    works = []
+    conferences = []
     for i in range(5):
-        raw = {
-            'id': f'https://openalex.org/W{100000+i}',
-            'title': f'Work {i} on AI',
-            'publication_year': 2024 - i,
-        }
-        w = Work.objects.create(
-            openalex_id=f'W{100000+i}',
-            title=f'Work {i} on AI',
-            publication_year=2024 - i,
-            raw_json=json.dumps(raw),
+        html = f'<html><title>Conference {i}</title></html>'
+        c = Conference.objects.create(
+            wikicfp_id=f'{10000+i}',
+            title=f'Conference {i} on AI',
+            event_date=date(2024, 5 - i, 15),
+            raw_html=html,
         )
-        works.append(w)
-    return works
+        conferences.append(c)
+    return conferences

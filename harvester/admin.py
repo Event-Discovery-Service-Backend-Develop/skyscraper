@@ -1,9 +1,9 @@
 from django.contrib import admin
-from .models import Work
+from .models import Conference
 
 
-@admin.register(Work)
-class WorkAdmin(admin.ModelAdmin):
-    list_display = ("openalex_id", "title", "publication_year", "created_at")
-    list_filter = ("publication_year",)
-    search_fields = ("openalex_id", "title", "doi")
+@admin.register(Conference)
+class ConferenceAdmin(admin.ModelAdmin):
+    list_display = ("wikicfp_id", "title", "event_date", "location", "deadline", "created_at")
+    list_filter = ("event_date", "deadline")
+    search_fields = ("wikicfp_id", "title", "location")

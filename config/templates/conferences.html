@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конференции - Event Discovery Service</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="fas fa-calendar-alt"></i> Event Discovery</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/">Главная</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/harvester/web/">Конференции</a></li>
+                    {% if user.is_authenticated %}
+                    <li class="nav-item"><a class="nav-link" href="/harvester/favorites/">Избранное</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/accounts/logout/">Выход</a></li>
+                    {% else %}
+                    <li class="nav-item"><a class="nav-link" href="/accounts/login/">Вход</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="mb-4">Научные конференции</h1>
+        
+        <!-- Форма поиска -->
+        <form method="get" class="mb-4">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" name="search" class="form-control" placeholder="Поиск по названию, ключевым словам, локации" value="{{ search }}">
+                </div>
+                <div class="col-md-3">
+                    <input type="number" name="year" class="form-control" placeholder="Год проведения" value="{{ year }}">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search"></i> Искать</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Список конференций -->
+        <div class="row">
+            {% for conference in page_obj %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{% url 'conference_detail' conference.pk %}" class="text-decoration-none">{{ conference.title }}</a>
+                        </h5>
+                        <p class="card-text">
+                            {% if conference.location %}
+                            <i class="fas fa-map-marker-alt"></i> {{ conference.location }}<br>
+                            {% endif %}
+                            {% if conference.event_date %}
+                            <i class="fas fa-calendar"></i> {{ conference.event_date|date:"d.m.Y" }}<br>
+                            {% endif %}
+                            {% if conference.deadline %}
+                            <i class="fas fa-clock"></i> Дедлайн: {{ conference.deadline|date:"d.m.Y" }}<br>
+                            {% endif %}
+                            {% if conference.keywords %}
+                            <small class="text-muted">{{ conference.keywords }}</small>
+                            {% endif %}
+                        </p>
+                        {% if conference.url %}
+                        <a href="{{ conference.url }}" target="_blank" class="btn btn-outline-primary btn-sm">Подробнее</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">Конференции не найдены. Попробуйте изменить критерии поиска.</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Пагинация -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Пагинация конференций">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if year %}&year={{ year }}{% endif %}">Предыдущая</a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if year %}&year={{ year }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if year %}&year={{ year }}{% endif %}">Следующая</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

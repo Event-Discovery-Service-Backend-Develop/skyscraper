@@ -1,12 +1,12 @@
-# Scientific Data Harvester (Django)
+# Event Discovery Service (Django)
 
-Командный проект Advanced Backend & DevOps. Микросервис сбора и анализа метаданных научных публикаций (OpenAlex).
+Командный проект Advanced Backend & DevOps. Микросервис поиска и анализа научных конференций и симпозиумов (WikiCFP).
 
 Репозиторий: [Event-Discovery-Service-Backend-Develop/skyscraper](https://github.com/Event-Discovery-Service-Backend-Develop/skyscraper)
 
 ## Стек
 
-Django 5, DRF, JWT (Simple JWT), PostgreSQL, Docker.
+Django 5, DRF, JWT (Simple JWT), PostgreSQL, Docker, BeautifulSoup4.
 
 ## Запуск
 
@@ -14,8 +14,8 @@ Django 5, DRF, JWT (Simple JWT), PostgreSQL, Docker.
 docker compose up --build -d
 docker compose exec app python manage.py migrate
 docker compose exec app python manage.py createsuperuser
-docker compose exec app python manage.py collect_openalex --pages 2 --per-page 50
-docker compose exec app python manage.py process_works
+docker compose exec app python manage.py collect_wikicfp --pages 2 --per-page 50
+docker compose exec app python manage.py process_events
 ```
 
 Локально: `bash run.sh` (создает venv, миграции и запускает сервер).
@@ -32,8 +32,8 @@ python -m venv .venv
 
 ## Команды управления
 
-- `python manage.py collect_openalex --pages 2 --per-page 50 --delay 1` — сбор с OpenAlex (user-agent, задержка, обработка ошибок)
-- `python manage.py process_works [--limit N]` — заполнение keywords из raw_json
+- `python manage.py collect_wikicfp --pages 2 --per-page 50 --delay 1` — сбор конференций с WikiCFP (user-agent, задержка, обработка ошибок)
+- `python manage.py process_events [--limit N]` — заполнение keywords из raw_html
 - `python manage.py migrate` — применение миграций БД
 - `python manage.py createsuperuser` — создание администратора
 
@@ -41,7 +41,7 @@ python -m venv .venv
 
 ### Публичные
 - `GET /` — главная страница
-- `GET /health/` — проверка здоровья сервис
+- `GET /health/` — проверка здоровья сервиса
 
 ### Аутентификация
 - `POST /api/token/` — получить JWT токен

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ conference.title }} - Event Discovery Service</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="fas fa-calendar-alt"></i> Event Discovery</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/">Главная</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/harvester/web/">Конференции</a></li>
+                    {% if user.is_authenticated %}
+                    <li class="nav-item"><a class="nav-link" href="/harvester/favorites/">Избранное</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/accounts/logout/">Выход</a></li>
+                    {% else %}
+                    <li class="nav-item"><a class="nav-link" href="/accounts/login/">Вход</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <h1>{{ conference.title }}</h1>
+                
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <dl class="row">
+                            {% if conference.event_date %}
+                            <dt class="col-sm-3">Дата проведения:</dt>
+                            <dd class="col-sm-9"><i class="fas fa-calendar"></i> {{ conference.event_date|date:"l, d F Y" }}</dd>
+                            {% endif %}
+                            
+                            {% if conference.location %}
+                            <dt class="col-sm-3">Место:</dt>
+                            <dd class="col-sm-9"><i class="fas fa-map-marker-alt"></i> {{ conference.location }}</dd>
+                            {% endif %}
+                            
+                            {% if conference.deadline %}
+                            <dt class="col-sm-3">Дедлайн:</dt>
+                            <dd class="col-sm-9">
+                                <i class="fas fa-clock"></i> {{ conference.deadline|date:"l, d F Y" }}
+                                {% if conference.deadline < now %}
+                                <span class="badge bg-danger">Истек</span>
+                                {% elif conference.deadline < now|date:"Y-m-d"|date:"U"|add:"2592000"|date:"U"|date:"Y-m-d" %}
+                                <span class="badge bg-warning">Скоро</span>
+                                {% else %}
+                                <span class="badge bg-success">Активен</span>
+                                {% endif %}
+                            </dd>
+                            {% endif %}
+                            
+                            {% if conference.url %}
+                            <dt class="col-sm-3">Ссылка:</dt>
+                            <dd class="col-sm-9"><a href="{{ conference.url }}" target="_blank" class="btn btn-outline-primary"><i class="fas fa-external-link-alt"></i> Перейти на WikiCFP</a></dd>
+                            {% endif %}
+                            
+                            {% if conference.keywords %}
+                            <dt class="col-sm-3">Ключевые слова:</dt>
+                            <dd class="col-sm-9">
+                                {% for keyword in conference.keywords|split:"," %}
+                                <span class="badge bg-secondary me-1">{{ keyword|strip }}</span>
+                                {% endfor %}
+                            </dd>
+                            {% endif %}
+                        </dl>
+                    </div>
+                </div>
+                
+                {% if conference.raw_html %}
+                <div class="mt-4">
+                    <h3>Дополнительная информация</h3>
+                    <div class="border p-3 bg-light">
+                        {{ conference.raw_html|safe|truncatechars:1000 }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Действия</h5>
+                    </div>
+                    <div class="card-body">
+                        <a href="/harvester/web/" class="btn btn-secondary w-100 mb-2"><i class="fas fa-arrow-left"></i> Назад к списку</a>
+                        {% if user.is_authenticated %}
+                        {% if is_favorite %}
+                        <a href="{% url 'remove_favorite' conference.pk %}" class="btn btn-outline-danger w-100 mb-2"><i class="fas fa-heart-broken"></i> Удалить из избранного</a>
+                        {% else %}
+                        <a href="{% url 'add_favorite' conference.pk %}" class="btn btn-outline-success w-100 mb-2"><i class="fas fa-heart"></i> Добавить в избранное</a>
+                        {% endif %}
+                        {% endif %}
+                        {% if conference.url %}
+                        <a href="{{ conference.url }}" target="_blank" class="btn btn-primary w-100"><i class="fas fa-external-link-alt"></i> Официальный сайт</a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5>Статистика</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>ID:</strong> {{ conference.wikicfp_id }}</p>
+                        <p><strong>Добавлено:</strong> {{ conference.created_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

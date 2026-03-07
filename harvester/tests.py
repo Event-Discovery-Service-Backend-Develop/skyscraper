@@ -2,8 +2,8 @@ import json
 import pytest
 from django.contrib.auth import get_user_model
 from rest_framework import status
-from harvester.models import Work
-from harvester.processor import extract_keywords_from_raw, clean_title
+from harvester.models import Conference
+from harvester.processor import extract_keywords_from_html, clean_title
 
 User = get_user_model()
 
@@ -11,42 +11,45 @@ User = get_user_model()
 # ============ UNIT ТЕСТЫ ДЛЯ МОДЕЛЕЙ ============
 
 @pytest.mark.unit
-class TestWorkModel:
-    """Тесты для модели Work"""
+class TestConferenceModel:
+    """Тесты для модели Conference"""
     
-    def test_work_creation(self, db):
-        """Проверка создания работы"""
-        work = Work.objects.create(
-            openalex_id='W123456',
-            title='Test Paper',
-            doi='10.1234/test',
-            publication_year=2024
+    def test_conference_creation(self, db):
+        """Проверка создания конференции"""
+        from datetime import date
+        conf = Conference.objects.create(
+            wikicfp_id='12345',
+            title='Test Conference',
+            event_date=date(2024, 5, 15),
+            location='New York',
+            deadline=date(2024, 4, 1),
+            url='https://example.com'
         )
-        assert work.openalex_id == 'W123456'
-        assert work.title == 'Test Paper'
-        assert work.publication_year == 2024
-        assert work.id is not None
+        assert conf.wikicfp_id == '12345'
+        assert conf.title == 'Test Conference'
+        assert conf.event_date == date(2024, 5, 15)
+        assert conf.id is not None
     
-    def test_work_unique_openalex_id(self, db):
-        """OpenAlex ID должен быть уникальным"""
-        Work.objects.create(openalex_id='W999', title='First')
+    def test_conference_unique_wikicfp_id(self, db):
+        """WikiCFP ID должен быть уникальным"""
+        Conference.objects.create(wikicfp_id='999', title='First')
         
         with pytest.raises(Exception):  # IntegrityError
-            Work.objects.create(openalex_id='W999', title='Second')
+            Conference.objects.create(wikicfp_id='999', title='Second')
     
-    def test_work_with_keywords(self, db):
-        """Работа может иметь ключевые слова"""
-        work = Work.objects.create(
-            openalex_id='W444',
-            title='ML Paper',
-            keywords='machine learning, neural networks, deep learning'
+    def test_conference_with_keywords(self, db):
+        """Конференция может иметь ключевые слова"""
+        conf = Conference.objects.create(
+            wikicfp_id='444',
+            title='AI Conference',
+            keywords='artificial intelligence, machine learning, neural networks'
         )
-        assert 'machine learning' in work.keywords
+        assert 'artificial intelligence' in conf.keywords
     
-    def test_work_ordering(self, db, multiple_works):
-        """Работы сортируются по дате создания"""
-        works = Work.objects.all()
-        assert works[0].id is not None  # Все что угодно, главное есть
+    def test_conference_ordering(self, db, multiple_conferences):
+        """Конференции сортируются по дате создания"""
+        conferences = Conference.objects.all()
+        assert conferences[0].id is not None  # Все что угодно, главное есть
 
 
 # ============ UNIT ТЕСТЫ ДЛЯ ПРОЦЕССОРА ============
@@ -72,30 +75,21 @@ class TestProcessor:
         assert clean_title(None) == ""
     
     def test_extract_keywords_from_raw_basic(self):
-        """Извлечение ключевых слов из JSON"""
-        raw = json.dumps({
-            'title': 'Deep Learning and Neural Networks',
-            'keywords': ['AI', 'ML'],
-        })
-        keywords = extract_keywords_from_raw(raw)
+        """Извлечение ключевых слов из HTML"""
+        html = '<html><head><title>Test Conference</title></head><body><h1>Test Conference</h1><p>This is about AI and ML</p></body></html>'
+        keywords = extract_keywords_from_html(html)
         assert keywords is not None
         assert len(keywords.split(',')) > 0
     
     def test_extract_keywords_from_raw_concepts(self):
-        """Извлечение ключевых слов из concepts"""
-        raw = json.dumps({
-            'title': 'Study',
-            'concepts': [
-                {'display_name': 'Machine Learning'},
-                {'display_name': 'Neural Networks'},
-            ]
-        })
-        keywords = extract_keywords_from_raw(raw)
-        assert 'Machine Learning' in keywords or 'Neural' in keywords
+        """Извлечение ключевых слов из description"""
+        html = '<html><body><h1>Study</h1><div class="desc">Machine Learning and Neural Networks</div></body></html>'
+        keywords = extract_keywords_from_html(html)
+        assert 'Machine' in keywords or 'Learning' in keywords
     
     def test_extract_keywords_empty_json(self):
-        """Пустой JSON обрабатывается"""
-        keywords = extract_keywords_from_raw('{}')
+        """Пустой HTML обрабатывается"""
+        keywords = extract_keywords_from_html('')
         assert keywords is None
     
     def test_extract_keywords_invalid_json(self):
