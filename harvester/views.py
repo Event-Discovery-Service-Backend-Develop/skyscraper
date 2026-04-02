@@ -1,5 +1,6 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
@@ -36,7 +37,29 @@ class ConferenceViewSet(viewsets.ReadOnlyModelViewSet):
                 Q(title__icontains=search) | Q(keywords__icontains=search) | Q(location__icontains=search)
             )
 
+        tag = self.request.query_params.get("tag")
+        if tag:
+            qs = qs.filter(keywords__icontains=tag)
+
+        processed = self.request.query_params.get("processed")
+        if processed in {"true", "false"}:
+            qs = qs.filter(is_processed=(processed == "true"))
+
         return qs
+
+
+class DiscoveryMetaAPIView(APIView):
+    permission_classes = []
+
+    def get(self, request):
+        return Response(
+            {
+                "filters": {
+                    "supported_tags": ["AI", "Security", "Physics", "Data Science", "Software Engineering"],
+                    "query_params": ["page", "page_size", "search", "year", "tag", "ordering", "processed"],
+                }
+            }
+        )
 
 
 def conference_list(request):

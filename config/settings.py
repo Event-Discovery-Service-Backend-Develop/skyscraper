@@ -1,5 +1,6 @@
 import os
 import environ
+from celery.schedules import crontab
 
 env = environ.Env(DEBUG=(bool, False))
 environ.Env.read_env(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
@@ -80,6 +81,23 @@ STATIC_ROOT = os.path.join(os.path.dirname(os.path.dirname(__file__)), "staticfi
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 WIKICFP_BASE_URL = env("WIKICFP_BASE_URL", default="https://www.wikicfp.com")
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://redis:6379/0")
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=CELERY_BROKER_URL)
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 60 * 10
+CELERY_BEAT_SCHEDULE = {
+    "collect-wikicfp-daily": {
+        "task": "harvester.tasks.collect_wikicfp_task",
+        "schedule": crontab(minute=10, hour=2),
+        "args": (3, 40),
+    },
+    "process-conferences-every-hour": {
+        "task": "harvester.tasks.process_conferences_task",
+        "schedule": crontab(minute=0),
+        "args": (500,),
+    },
+}
 
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
