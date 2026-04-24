@@ -13,8 +13,12 @@ from .views import (
 router = DefaultRouter()
 router.register(r"conferences", ConferenceViewSet, basename="conference")
 
+alias_router = DefaultRouter()
+alias_router.register(r"works", ConferenceViewSet, basename="work")
+
 urlpatterns = [
     path("", include(router.urls)),
+    path("", include(alias_router.urls)),
     path("discovery/meta/", DiscoveryMetaAPIView.as_view(), name="discovery_meta"),
     path("web/", conference_list, name="conference_list"),
     path("web/<int:pk>/", conference_detail, name="conference_detail"),

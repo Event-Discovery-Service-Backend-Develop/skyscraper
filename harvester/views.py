@@ -1,6 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
@@ -14,7 +15,7 @@ from .pagination import StandardResultsSetPagination
 
 class ConferenceViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ConferenceSerializer
-    # permission_classes = [IsAuthenticated]  # Временно отключено для демонстрации
+    permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
     filterset_fields = ["event_date", "deadline"]
     search_fields = ["title", "keywords", "location"]

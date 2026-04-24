@@ -1,9 +1,12 @@
 import json
+from datetime import date
+
 import pytest
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from harvester.models import Conference
-from harvester.processor import extract_keywords_from_html, clean_title
+from harvester.processor import extract_conference_data, extract_keywords_from_html, clean_title
+from harvester.services import CrawlerService
 
 User = get_user_model()
 
@@ -93,9 +96,36 @@ class TestProcessor:
         assert keywords is None
     
     def test_extract_keywords_invalid_json(self):
-        """Невалидный JSON не падает"""
-        keywords = extract_keywords_from_raw('not json at all')
+        """Невалидный HTML не должен падать"""
+        keywords = extract_keywords_from_html('not json at all')
         assert keywords is None
+
+    def test_extract_conference_data(self):
+        """Парсер конференции извлекает поля из HTML"""
+        html = (
+            '<html><head><title>Test Conference</title></head>'
+            '<body><h1>Test Conference</h1>'
+            '<p>When: May 15, 2025</p>'
+            '<p>Where: Berlin</p>'
+            '<p>Deadline: April 20, 2025</p>'
+            '<a href="https://example.com">Link</a>'
+            '</body></html>'
+        )
+        data = extract_conference_data(html)
+        assert data['title'] == 'Test Conference'
+        assert data['event_date'] == date(2025, 5, 15)
+        assert data['location'] == 'Berlin'
+        assert data['deadline'] == date(2025, 4, 20)
+
+    def test_crawler_collect_detail_urls(self):
+        """Сборщик извлекает уникальные ссылки на конференции"""
+        html = (
+            '<a href="/cfp/program.id/123">Event1</a>'
+            '<a href="/cfp/program.id/123">Event1 duplicate</a>'
+        )
+        service = CrawlerService(base_url='https://www.wikicfp.com')
+        urls = service._collect_detail_urls(html)
+        assert urls == ['https://www.wikicfp.com/cfp/program.id/123']
 
 
 # ============ ИНТЕГРАЦИОННЫЕ ТЕСТЫ ДЛЯ API ============
@@ -125,24 +155,26 @@ class TestWorksAPI:
     
     def test_works_filter_by_year(self, authenticated_client, multiple_works):
         """Фильтрация по году работает"""
-        response = authenticated_client.get('/api/works/?publication_year=2024')
+        response = authenticated_client.get('/api/works/?event_date=2024-01-01')
         assert response.status_code == status.HTTP_200_OK
         for work in response.data['results']:
-            assert work['publication_year'] == 2024
+            assert work['event_date'].startswith('2024')
     
     def test_works_search(self, authenticated_client, sample_work):
-        """Поиск по названию работает"""
+        """Поиск по ключевым словам работает"""
         response = authenticated_client.get('/api/works/?search=Machine')
         assert response.status_code == status.HTTP_200_OK
-        if len(response.data['results']) > 0:
-            assert 'Machine' in response.data['results'][0]['title']
+        assert any(
+            'machine' in (work.get('title', '') + work.get('keywords', '') + work.get('location', '')).lower()
+            for work in response.data['results']
+        )
     
     def test_works_ordering_by_year_desc(self, authenticated_client, multiple_works):
-        """Сортировка по году убывающая"""
-        response = authenticated_client.get('/api/works/?ordering=-publication_year')
+        """Сортировка по дате события убывающая"""
+        response = authenticated_client.get('/api/works/?ordering=-event_date')
         assert response.status_code == status.HTTP_200_OK
-        years = [w['publication_year'] for w in response.data['results']]
-        assert years == sorted(years, reverse=True)
+        dates = [w['event_date'] for w in response.data['results'] if w.get('event_date')]
+        assert dates == sorted(dates, reverse=True)
     
     def test_work_detail_fields(self, authenticated_client, sample_work):
         """Возвращаемые поля корректны"""
@@ -150,7 +182,7 @@ class TestWorksAPI:
         assert response.status_code == status.HTTP_200_OK
         if len(response.data['results']) > 0:
             work_data = response.data['results'][0]
-            required_fields = ['id', 'openalex_id', 'title', 'publication_year']
+            required_fields = ['id', 'wikicfp_id', 'title', 'event_date']
             for field in required_fields:
                 assert field in work_data
 

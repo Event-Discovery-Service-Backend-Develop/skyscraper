@@ -77,3 +77,15 @@ def multiple_conferences(db):
         )
         conferences.append(c)
     return conferences
+
+
+@pytest.fixture
+def sample_work(sample_conference):
+    """Алиас фикстуры для исторической совместимости"""
+    return sample_conference
+
+
+@pytest.fixture
+def multiple_works(multiple_conferences):
+    """Алиас фикстуры для исторической совместимости"""
+    return multiple_conferences

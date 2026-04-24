@@ -16,3 +16,6 @@ pytest-django>=4.5,<5.0
 factory-boy>=3.3,<4.0
 flake8>=6.0,<8.0
 black>=23.0,<26.0
+drf-spectacular>=0.26,<1.0
+prometheus-client>=0.19,<1.0
+django-allauth>=0.63,<1.0

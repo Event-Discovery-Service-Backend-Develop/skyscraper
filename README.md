@@ -1,10 +1,10 @@
-Scientific Data Harvester
+Event Discovery Service
 
 Командный проект курса Advanced Backend & DevOps.
 
-Сервис для сбора, хранения и анализа метаданных научных публикаций из внешнего источника OpenAlex API.
+Сервис для сбора, хранения и анализа метаданных научных конференций из внешнего источника WikiCFP.
 
-Проект собирает научные публикации, сохраняет их в базе данных и предоставляет доступ к ним через REST API.
+Проект собирает научные конференции, сохраняет их в базе данных и предоставляет доступ к ним через REST API.
 
 Технологический стек
 
@@ -27,12 +27,14 @@ k6 (нагрузочное тестирование)
 docker compose up --build -d
 docker compose exec app python manage.py migrate
 docker compose exec app python manage.py createsuperuser
-docker compose exec app python manage.py collect_openalex --pages 2 --per-page 50
-docker compose exec app python manage.py process_works
+docker compose exec app python manage.py collect_wikicfp --pages 2 --per-page 50
+docker compose exec app python manage.py process_events
 
 После запуска сервис доступен:
 
 http://localhost:8000
+API Документация (Swagger): http://localhost:8000/api/schema/swagger-ui/
+Метрики Prometheus: http://localhost:8000/metrics/
 Локальный запуск (режим разработки)
 
 Используется для разработки и тестирования проекта без Docker.
@@ -42,15 +44,15 @@ python -m venv .venv
 .venv/bin/python manage.py migrate
 .venv/bin/python manage.py runserver
 Основные команды проекта
-Сбор данных из OpenAlex
-python manage.py collect_openalex --pages 2 --per-page 50 --delay 1
+Сбор данных из WikiCFP
+python manage.py collect_wikicfp --pages 2 --per-page 50 --delay 1
 
-Команда получает данные из OpenAlex API и сохраняет их в базе данных.
+Команда получает данные из WikiCFP и сохраняет их в базе данных.
 
 Обработка данных
-python manage.py process_works
+python manage.py process_events
 
-Извлекает ключевые слова из raw_json и сохраняет их в поле keywords.
+Извлекает ключевые слова и нормализует данные конференции.
 
 Миграции базы данных
 python manage.py migrate
@@ -161,8 +163,8 @@ skyscraper/
 │   ├── processor.py
 │   ├── tests.py
 │   └── management/commands/
-│       ├── collect_openalex.py
-│       └── process_works.py
+│       ├── collect_wikicfp.py
+│       └── process_events.py
 │
 ├── load-tests/             # нагрузочные тесты
 │
@@ -183,20 +185,27 @@ ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
 USE_POSTGRES=0
 DATABASE_URL=postgresql://harvester:secret@db:5432/harvester_db
 
-OPENALEX_BASE_URL=https://api.openalex.org
 ## ER Diagram
-+----------------------+
-|        Work          |
-+----------------------+
-| id (PK)              |
-| openalex_id (unique) |
-| title                |
-| doi                  |
-| publication_year     |
-| raw_json             |
-| keywords             |
-| created_at           |
-+----------------------+
-## License
++----------------------------+
+|       Conference           |
++----------------------------+
+| id (PK)                    |
+| wikicfp_id (unique)        |
+| title                      |
+| event_date                 |
+| location                   |
+| deadline                   |
+| url                        |
+| raw_html                   |
+| clean_description          |
+| keywords                   |
+| is_processed               |
+| created_at                 |
+| updated_at                 |
++----------------------------+
+
+## Monitoring
+Prometheus: http://localhost:9090
+Grafana: http://localhost:3000 (admin/admin)
 
 MIT
