@@ -1,46 +1,36 @@
 import os
 import importlib.util
+from datetime import timedelta
 from urllib.parse import urlparse
+from celery.schedules import crontab
 
 try:
     import environ  # type: ignore
-except ImportError:  # pragma: no cover
+except ImportError:
     environ = None
-from celery.schedules import crontab
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ENV_PATH = os.path.join(BASE_DIR, ".env")
 
-
+# Вспомогательные функции для работы без библиотеки django-environ
 def _fallback_env(name: str, default=None):
     return os.environ.get(name, default)
 
-
 def _fallback_bool(name: str, default: bool = False) -> bool:
     value = os.environ.get(name)
-    if value is None:
-        return default
+    if value is None: return default
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
-
 def _fallback_list(name: str, default=None):
-    if default is None:
-        default = []
+    if default is None: default = []
     value = os.environ.get(name)
-    if not value:
-        return default
+    if not value: return default
     return [item.strip() for item in value.split(",") if item.strip()]
-
 
 def _fallback_db(name: str):
     url = os.environ.get(name)
-    if not url:
-        raise ValueError(f"{name} is not set")
-
+    if not url: raise ValueError(f"{name} is not set")
     parsed = urlparse(url)
-    if parsed.scheme not in {"postgres", "postgresql"}:
-        raise ValueError(f"Unsupported DB scheme: {parsed.scheme}")
-
     return {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": (parsed.path or "/")[1:],
@@ -50,41 +40,39 @@ def _fallback_db(name: str):
         "PORT": parsed.port or 5432,
     }
 
-
+# Инициализация настроек окружения
 if environ is not None:
     env = environ.Env(DEBUG=(bool, False))
-    environ.Env.read_env(ENV_PATH)
+    if os.path.exists(ENV_PATH):
+        environ.Env.read_env(ENV_PATH)
 else:
     if os.path.exists(ENV_PATH):
         with open(ENV_PATH, encoding="utf-8") as env_file:
             for raw_line in env_file:
                 line = raw_line.strip()
-                if not line or line.startswith("#") or "=" not in line:
-                    continue
+                if not line or line.startswith("#") or "=" not in line: continue
                 key, value = line.split("=", 1)
                 os.environ.setdefault(key.strip(), value.strip())
-
+    
     class _EnvAdapter:
-        def __call__(self, name: str, default=None):
-            return _fallback_env(name, default)
-
+        def __call__(self, name: str, default=None): return _fallback_env(name, default)
         @staticmethod
-        def bool(name: str, default: bool = False):
-            return _fallback_bool(name, default)
-
+        def bool(name: str, default: bool = False): return _fallback_bool(name, default)
         @staticmethod
-        def list(name: str, default=None):
-            return _fallback_list(name, default)
-
+        def list(name: str, default=None): return _fallback_list(name, default)
         @staticmethod
-        def db(name: str):
-            return _fallback_db(name)
-
+        def db(name: str): return _fallback_db(name)
     env = _EnvAdapter()
 
-SECRET_KEY = env("SECRET_KEY", default="change-me-in-production")  # type: ignore
-DEBUG = env("DEBUG", default=True)  # type: ignore
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "0.0.0.0"])  # type: ignore
+SECRET_KEY = env("SECRET_KEY", default="change-me-in-production")
+DEBUG = env.bool("DEBUG", default=True)
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web', '0.0.0.0']
+
+# Проверка наличия модулей
+HAS_DRF_SPECTACULAR = importlib.util.find_spec("drf_spectacular") is not None
+HAS_DJANGO_FILTER = importlib.util.find_spec("django_filters") is not None
+HAS_ALLAUTH = importlib.util.find_spec("allauth") is not None
+HAS_SIMPLEJWT = importlib.util.find_spec("rest_framework_simplejwt") is not None
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -98,23 +86,10 @@ INSTALLED_APPS = [
     "harvester",
 ]
 
-HAS_DRF_SPECTACULAR = importlib.util.find_spec("drf_spectacular") is not None
-HAS_DJANGO_FILTER = importlib.util.find_spec("django_filters") is not None
-HAS_ALLAUTH = importlib.util.find_spec("allauth") is not None
-HAS_SIMPLEJWT = importlib.util.find_spec("rest_framework_simplejwt") is not None
-
-if HAS_DRF_SPECTACULAR:
-    INSTALLED_APPS.append("drf_spectacular")
-if HAS_DJANGO_FILTER:
-    INSTALLED_APPS.append("django_filters")
+if HAS_DRF_SPECTACULAR: INSTALLED_APPS.append("drf_spectacular")
+if HAS_DJANGO_FILTER: INSTALLED_APPS.append("django_filters")
 if HAS_ALLAUTH:
-    INSTALLED_APPS.extend(
-        [
-            "allauth",
-            "allauth.account",
-            "allauth.socialaccount",
-        ]
-    )
+    INSTALLED_APPS.extend(["allauth", "allauth.account", "allauth.socialaccount"])
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -126,6 +101,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "harvester.middleware.PrometheusMiddleware",
 ]
+
 if HAS_ALLAUTH:
     MIDDLEWARE.insert(-1, "allauth.account.middleware.AccountMiddleware")
 
@@ -169,15 +145,14 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
-STATIC_ROOT = os.path.join(os.path.dirname(os.path.dirname(__file__)), "staticfiles")
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-WIKICFP_BASE_URL = env("WIKICFP_BASE_URL", default="https://www.wikicfp.com")  # type: ignore
-CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://redis:6379/0")  # type: ignore
-CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=CELERY_BROKER_URL)  # type: ignore
+WIKICFP_BASE_URL = env("WIKICFP_BASE_URL", default="https://www.wikicfp.com")
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://redis:6379/0")
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=CELERY_BROKER_URL)
 CELERY_TIMEZONE = TIME_ZONE
-CELERY_TASK_TRACK_STARTED = True
-CELERY_TASK_TIME_LIMIT = 60 * 10
+
 CELERY_BEAT_SCHEDULE = {
     "collect-wikicfp-daily": {
         "task": "harvester.tasks.collect_wikicfp_task",
@@ -200,60 +175,34 @@ REST_FRAMEWORK = {
         "rest_framework.filters.SearchFilter",
     ],
 }
+
 if HAS_DJANGO_FILTER:
     REST_FRAMEWORK["DEFAULT_FILTER_BACKENDS"].insert(0, "django_filters.rest_framework.DjangoFilterBackend")
 if HAS_DRF_SPECTACULAR:
     REST_FRAMEWORK["DEFAULT_SCHEMA_CLASS"] = "drf_spectacular.openapi.AutoSchema"
 if HAS_SIMPLEJWT:
-    REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"].append(
-        "rest_framework_simplejwt.authentication.JWTAuthentication"
-    )
+    REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"].append("rest_framework_simplejwt.authentication.JWTAuthentication")
 
-from datetime import timedelta
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
-}
-
+SIMPLE_JWT = {"ACCESS_TOKEN_LIFETIME": timedelta(hours=1)}
 SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
 if HAS_ALLAUTH:
     AUTHENTICATION_BACKENDS.append("allauth.account.auth_backends.AuthenticationBackend")
-
-if HAS_ALLAUTH:
     ACCOUNT_EMAIL_VERIFICATION = "none"
     ACCOUNT_LOGIN_METHODS = {"username", "email"}
+
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '[%(asctime)s] %(levelname)s %(name)s %(message)s'
-        },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
-    },
+    'formatters': {'verbose': {'format': '[%(asctime)s] %(levelname)s %(name)s %(message)s'}},
+    'handlers': {'console': {'class': 'logging.StreamHandler', 'formatter': 'verbose'}},
+    'root': {'handlers': ['console'], 'level': 'INFO'},
     'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-        'harvester': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
+        'django': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+        'harvester': {'handlers': ['console'], 'level': 'DEBUG', 'propagate': False},
     },
 }

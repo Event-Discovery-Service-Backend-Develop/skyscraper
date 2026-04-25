@@ -27,7 +27,11 @@ sudo apt-get install k6
 Docker:
 ```bash
 docker compose up -d
+<<<<<<< HEAD
 docker compose exec web python manage.py migrate
+=======
+docker compose exec app python manage.py migrate
+>>>>>>> e47ba85ba22a34943990d6826680058a7a3898f6
 ```
 
 Локально:
@@ -95,7 +99,11 @@ k6 run smoke_test.js --out json=results.json
 
 Потом можно анализировать результаты:
 ```bash
+<<<<<<< HEAD
 python3 analyze_k6_results.py results.json
+=======
+python3 analyze_results.py results.json
+>>>>>>> e47ba85ba22a34943990d6826680058a7a3898f6
 ```
 
 ## Базовые метрики для отчета

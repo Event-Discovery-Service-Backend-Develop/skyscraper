@@ -1,8 +1,5 @@
-from rest_framework import viewsets
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
 from datetime import date
+from django.conf import settings
 from django.db import connection
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, redirect
@@ -10,6 +7,11 @@ from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+
+from rest_framework import viewsets
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 
 from .models import Conference, Favorite
 from .serializers import ConferenceSerializer
@@ -37,6 +39,7 @@ class ConferenceViewSet(viewsets.ReadOnlyModelViewSet):
 
         search = self.request.query_params.get("search")
         if search:
+            # Используем полнотекстовый поиск, если база — PostgreSQL
             if connection.vendor == "postgresql":
                 vector = (
                     SearchVector("title", weight="A")
@@ -51,7 +54,9 @@ class ConferenceViewSet(viewsets.ReadOnlyModelViewSet):
                 )
             else:
                 qs = qs.filter(
-                    Q(title__icontains=search) | Q(keywords__icontains=search) | Q(location__icontains=search)
+                    Q(title__icontains=search) | 
+                    Q(keywords__icontains=search) | 
+                    Q(location__icontains=search)
                 )
 
         tag = self.request.query_params.get("tag")
@@ -83,7 +88,6 @@ def conference_list(request):
     """Веб-страница со списком конференций"""
     conferences = Conference.objects.all().order_by("-event_date")
     
-    # Фильтры
     search = request.GET.get('search')
     if search:
         conferences = conferences.filter(
@@ -94,7 +98,6 @@ def conference_list(request):
     if year:
         conferences = conferences.filter(event_date__year=year)
     
-    # Пагинация
     paginator = Paginator(conferences, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -112,6 +115,7 @@ def conference_detail(request, pk):
     is_favorite = False
     if request.user.is_authenticated:
         is_favorite = Favorite.objects.filter(user=request.user, conference=conference).exists()
+    
     keywords_list = []
     if conference.keywords:
         keywords_list = [keyword.strip() for keyword in conference.keywords.split(",") if keyword.strip()]
@@ -159,7 +163,6 @@ def favorites_list(request):
     favorites = Favorite.objects.filter(user=request.user).select_related('conference')
     conferences = [f.conference for f in favorites]
     
-    # Пагинация
     paginator = Paginator(conferences, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)

@@ -317,8 +317,13 @@ python analyze_k6_results.py results.json
 
 ### 📋 Чеклист для следующих этапов
 
+<<<<<<< HEAD
 - [x] Настроить Prometheus для сбора метрик
 - [x] Создать Grafana дашборд
+=======
+- [ ] Настроить Prometheus для сбора метрик
+- [ ] Создать Grafana дашборд
+>>>>>>> e47ba85ba22a34943990d6826680058a7a3898f6
 - [ ] Добавить логирование запросов
 - [ ] Настроить alerting при перегрузке
 - [ ] Документировать SLA (Service Level Agreement)
@@ -361,8 +366,13 @@ pytest --cov=harvester
 
 # 3. Запустить в Docker
 docker compose up -d
+<<<<<<< HEAD
 docker compose exec web python manage.py migrate
 docker compose exec web python manage.py createsuperuser
+=======
+docker compose exec app python manage.py migrate
+docker compose exec app python manage.py createsuperuser
+>>>>>>> e47ba85ba22a34943990d6826680058a7a3898f6
 
 # 4. Запустить k6 тесты
 cd load-tests

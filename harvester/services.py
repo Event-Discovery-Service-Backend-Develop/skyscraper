@@ -110,7 +110,6 @@ class CrawlerService:
                     else:
                         updated += 1
 
-                # Slightly larger pause between listing pages.
                 self._human_delay(1.2, 3.5)
 
         return {"collected": collected, "created": created, "updated": updated}
@@ -118,8 +117,6 @@ class CrawlerService:
     def _build_client(self) -> httpx.Client:
         if not self.proxy:
             return httpx.Client(follow_redirects=True)
-
-        # httpx versions differ: some use `proxy`, older versions use `proxies`.
         try:
             return httpx.Client(follow_redirects=True, proxy=self.proxy)
         except TypeError:
@@ -138,7 +135,7 @@ class CrawlerService:
                 "raw_description": parsed.description_raw,
                 "event_date_raw": parsed.event_date_raw,
                 "deadline_raw": parsed.deadline_raw,
-                "is_processed": False,  # force re-processing after every fresh crawl
+                "is_processed": False,
                 "last_collected_at": timezone.now(),
             },
         )
@@ -230,7 +227,6 @@ class ProcessingService:
             if any(marker in source for marker in markers):
                 found.append(tag)
 
-        # Preserve manual keywords from previous runs if they exist.
         if conference.keywords:
             existing = [item.strip() for item in conference.keywords.split(",") if item.strip()]
             for item in existing:

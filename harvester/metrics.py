@@ -1,6 +1,7 @@
 try:
     from prometheus_client import Counter, Histogram, Gauge  # type: ignore
 except ImportError:  # pragma: no cover
+    # Заглушки на случай, если библиотека prometheus_client не установлена
     class _NoopMetric:
         def labels(self, **kwargs):
             return self

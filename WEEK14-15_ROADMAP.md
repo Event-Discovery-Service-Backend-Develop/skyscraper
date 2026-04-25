@@ -1,6 +1,10 @@
 # План для Недель 14-15: Мониторинг и Финальная защита
 
+<<<<<<< HEAD
 **Статус на апрель 2026:** Недели 1-14 реализованы, неделя 15 подготовлена по сценарию демо.
+=======
+**Статус на март 2026:** Завершены недели 1-13 (тестирование и нагрузка)
+>>>>>>> e47ba85ba22a34943990d6826680058a7a3898f6
 
 ---
 
@@ -175,11 +179,16 @@ Prepare:
 ```bash
 #!/bin/bash
 
+<<<<<<< HEAD
 echo "=== Event Discovery Demo ==="
+=======
+echo "=== Scientific Data Harvester Demo ==="
+>>>>>>> e47ba85ba22a34943990d6826680058a7a3898f6
 echo "1. Запуск контейнеров..."
 docker compose up -d
 
 echo "2. Создание схемы БД..."
+<<<<<<< HEAD
 docker compose exec web python manage.py migrate
 
 echo "3. Загрузка примеров данных..."
@@ -191,6 +200,19 @@ docker compose exec web python manage.py process_events
 echo ""
 echo "✅ Демо готово!"
 echo "📊 API: http://localhost:8000/api/conferences/"
+=======
+docker compose exec app python manage.py migrate
+
+echo "3. Загрузка примеров данных..."
+docker compose exec app python manage.py collect_openalex --pages 1 --per-page 10
+
+echo "4. Обработка ключевых слов..."
+docker compose exec app python manage.py process_works --limit 5
+
+echo ""
+echo "✅ Демо готово!"
+echo "📊 API: http://localhost:8000/api/works/"
+>>>>>>> e47ba85ba22a34943990d6826680058a7a3898f6
 echo "🔐 Получить токен: POST http://localhost:8000/api/token/"
 echo "📈 Метрики: http://localhost:9090"
 echo "🎨 Grafana: http://localhost:3000"
@@ -314,15 +336,24 @@ Errors: 0
 - [x] Неделя 9: JWT Authentication
 - [x] Неделя 10: Unit & Integration тесты + GitHub Actions
 - [x] Неделя 11-13: k6 нагрузочные тесты (smoke, stress, soak)
+<<<<<<< HEAD
 - [x] Неделя 14: Prometheus + Grafana мониторинг
 - [~] Неделя 15: Demo Day и защита проекта (нужны финальные скриншоты/артефакты)
+=======
+- [ ] Неделя 14: Prometheus + Grafana мониторинг
+- [ ] Неделя 15: Demo Day и защита проекта
+>>>>>>> e47ba85ba22a34943990d6826680058a7a3898f6
 
 ---
 
 ## Контакты и поддержка
 
 При проблемах с тестированием:
+<<<<<<< HEAD
 1. Проверить логи: `docker compose logs web`
+=======
+1. Проверить логи: `docker compose logs app`
+>>>>>>> e47ba85ba22a34943990d6826680058a7a3898f6
 2. Убедиться что PostgreSQL запущен: `docker ps`
 3. Очистить кэш pytest: `pytest --cache-clear`
 4. Переустановить зависимости: `pip install -r requirements.txt --force-reinstall`
