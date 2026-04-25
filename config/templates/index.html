@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Discovery Service</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface-hover: #243044;
+      --accent: #3b82f6;
+      --accent-soft: rgba(59, 130, 246, 0.15);
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --border: #30363d;
+      --green: #3fb950;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    h1 {
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .tagline {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 1rem;
+      padding: 0.35rem 0.75rem;
+      background: rgba(63, 185, 80, 0.12);
+      color: var(--green);
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .status::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .cards {
+      display: grid;
+      gap: 0.75rem;
+    }
+    a.card {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    }
+    a.card:hover {
+      background: var(--surface-hover);
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+    .card-body h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+    }
+    .card-body p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .card-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+      margin-left: auto;
+    }
+    footer {
+      margin-top: 2.5rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Event Discovery Service</h1>
+      <p class="tagline">Сервис поиска научных конференций и симпозиумов (WikiCFP)</p>
+      <div class="status">Сервис запущен</div>
+    </header>
+
+    <main class="cards">
+      <a class="card" href="/harvester/web/">
+        <div class="card-icon">🔍</div>
+        <div class="card-body">
+          <h2>Поиск конференций</h2>
+          <p>Найдите конференции по названию, локации и дате</p>
+        </div>
+        <div class="card-path">/harvester/web/</div>
+      </a>
+
+      <a class="card" href="/api/conferences/">
+        <div class="card-icon">📄</div>
+        <div class="card-body">
+          <h2>API конференций</h2>
+          <p>REST API с пагинацией и фильтрами</p>
+        </div>
+        <div class="card-path">/api/conferences/</div>
+      </a>
+
+      {% if user.is_authenticated %}
+      <a class="card" href="/harvester/favorites/">
+        <div class="card-icon">❤</div>
+        <div class="card-body">
+          <h2>Избранное</h2>
+          <p>Ваши сохраненные конференции</p>
+        </div>
+        <div class="card-path">/harvester/favorites/</div>
+      </a>
+      {% else %}
+      <a class="card" href="/accounts/login/">
+        <div class="card-icon">🔐</div>
+        <div class="card-body">
+          <h2>Войти</h2>
+          <p>Авторизуйтесь для доступа к избранному</p>
+        </div>
+        <div class="card-path">/accounts/login/</div>
+      </a>
+      {% endif %}
+
+      <a class="card" href="/admin/">
+        <div class="card-icon">⚙</div>
+        <div class="card-body">
+          <h2>Админ-панель</h2>
+          <p>Управление конференциями и пользователями</p>
+        </div>
+        <div class="card-path">/admin/</div>
+      </a>
+
+      <a class="card" href="/health/">
+        <div class="card-icon">💚</div>
+        <div class="card-body">
+          <h2>Healthcheck</h2>
+          <p>Проверка состояния сервиса</p>
+        </div>
+        <div class="card-path">/health/</div>
+      </a>
+    </main>
+
+    <footer>
+      <p>© 2026 Event Discovery Service. Построено с Django & DRF.</p>
+    </footer>
+  </div>
+</body>
+</html>

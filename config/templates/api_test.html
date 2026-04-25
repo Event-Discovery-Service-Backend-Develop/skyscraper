@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Tester - Event Discovery Service</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: rgba(255, 255, 255, 0.9);
+            --border: rgba(148, 163, 184, 0.25);
+            --text: #0f172a;
+            --muted: #475569;
+        }
+        body {
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            margin: 0;
+            background: linear-gradient(180deg, var(--bg) 0%, #eef2ff 100%);
+            color: var(--text);
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 28px 18px;
+        }
+        .section {
+            margin: 16px 0;
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: var(--card);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        }
+        button {
+            padding: 10px 16px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            background: #fff;
+        }
+        button:hover { border-color: #6366f1; color: #4338ca; }
+        input {
+            padding: 10px;
+            margin: 5px;
+            width: 220px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+        }
+        pre {
+            overflow-x: auto;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 14px;
+            border-radius: 10px;
+        }
+        .token {
+            background: #f1f5f9;
+            padding: 10px;
+            border-radius: 8px;
+            word-break: break-all;
+            display: inline-block;
+            margin-top: 8px;
+        }
+        .error { color: #dc2626; }
+        .success { color: #16a34a; }
+        .muted { color: var(--muted); font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 API Tester - Event Discovery Service</h1>
+        <p class="muted">Проверка JWT, фильтров и ответов API в одном месте.</p>
+
+        <div class="section">
+            <h2>1. Получить JWT токен</h2>
+            <input type="text" id="username" placeholder="username" value="admin">
+            <input type="password" id="password" placeholder="password" value="admin123">
+            <button onclick="getToken()">Получить токен</button>
+            <div id="token-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Тестировать API</h2>
+            <div id="token-display" style="display: none;">
+                <strong>Токен:</strong> <span id="current-token" class="token"></span>
+            </div>
+            <button onclick="testAPI('/api/conferences/?page=1&page_size=3')">Список конференций</button>
+            <button onclick="testAPI('/api/conferences/?search=machine')">Поиск "machine"</button>
+            <button onclick="testAPI('/api/conferences/?year=2026')">Фильтр по году</button>
+            <button onclick="testAPI('/api/conferences/?ordering=-event_date')">Сортировка по дате</button>
+            <button onclick="testAPI('/health/')">Health check</button>
+            <div id="api-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Ссылки</h2>
+            <a href="/admin/" target="_blank">Админ панель</a> |
+            <a href="/" target="_blank">Главная</a> |
+            <a href="/health/" target="_blank">Health</a> |
+            <a href="/api/schema/swagger-ui/" target="_blank">Swagger</a>
+        </div>
+    </div>
+
+    <script>
+        let accessToken = '';
+
+        async function getToken() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/api/token/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.access) {
+                    accessToken = data.access;
+                    document.getElementById('token-result').innerHTML =
+                        '<span class="success">✅ Токен получен!</span>';
+                    document.getElementById('token-display').style.display = 'block';
+                    document.getElementById('current-token').textContent = accessToken;
+                } else {
+                    document.getElementById('token-result').innerHTML =
+                        '<span class="error">❌ JWT недоступен или ошибка авторизации: ' + JSON.stringify(data) + '</span>';
+                }
+            } catch (error) {
+                document.getElementById('token-result').innerHTML =
+                    '<span class="error">❌ Ошибка сети: ' + error.message + '</span>';
+            }
+        }
+
+        async function testAPI(endpoint) {
+            const headers = { 'Content-Type': 'application/json' };
+
+            if (accessToken && !endpoint.includes('/health/')) {
+                headers['Authorization'] = `Bearer ${accessToken}`;
+            }
+
+            try {
+                const response = await fetch(endpoint, { headers });
+                const contentType = response.headers.get('content-type') || '';
+                const data = contentType.includes('application/json')
+                    ? await response.json()
+                    : await response.text();
+
+                let result = `<strong>${response.status} ${response.statusText}</strong><br>`;
+                result += '<pre>' + (typeof data === 'string' ? data : JSON.stringify(data, null, 2)) + '</pre>';
+
+                document.getElementById('api-result').innerHTML = result;
+            } catch (error) {
+                document.getElementById('api-result').innerHTML =
+                    '<span class="error">❌ Ошибка: ' + error.message + '</span>';
+            }
+        }
+
+        // Автоматическая попытка получить токен для ускорения демо.
+        window.onload = function() {
+            getToken();
+        };
+    </script>
+</body>
+</html>
